@@ -3,24 +3,23 @@ package pennyrain.mall_customer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
 public class KMeans {
-	// Test git
-	public static void classifyCustomers(List<Customer> customers, int k) {
+    public static void classifyCustomers(List<Customer> customers, int k) {
         // Initialize random centroids
-        List<Integer[]> centroids = new ArrayList<Integer[]>();
+        List<double[]> centroids = new ArrayList<>();
         Random rand = new Random();
         for (int i = 0; i < k; i++) {
-        	Integer[] centroid = {rand.nextInt(100),rand.nextInt(100)};
+            double[] centroid = {rand.nextInt(2), rand.nextInt(100), rand.nextInt(100), rand.nextInt(100)};
             centroids.add(centroid);
         }
-
-        // Assign customers to clusters based on the nearest centroid
         List<List<Customer>> clusters = new ArrayList<List<Customer>>();
-        
+
         // Main K-means algorithm loop
         boolean changed = true;
         while (changed) {
             changed = false;
+            clusters.clear();
             for (int i = 0; i < k; i++) {
                 clusters.add(new ArrayList<Customer>());
             }
@@ -28,9 +27,14 @@ public class KMeans {
             for (Customer customer : customers) {
                 int closestCentroidIndex = 0;
                 double minDistance = Double.MAX_VALUE;
+                double[] customerAttributes = {customer.getGender().equals("Male") ? 0 : 1, (double) customer.getAge(), (double) customer.getAnnualIncome(), (double) customer.getSpendingScore()};
                 for (int i = 0; i < k; i++) {
-                	Integer[] centroid = centroids.get(i);
-                    Double distance = Math.sqrt(Math.pow(customer.getAnnualIncome()-centroid[0],2) + Math.pow(customer.getSpendingScore()-centroid[1],2));
+                    double[] centroid = centroids.get(i);
+                    double distance = 0;
+                    for (int j = 0; j < centroid.length; j++) {
+                        distance += Math.pow(customerAttributes[j] - centroid[j], 2);
+                    }
+                    distance = Math.sqrt(distance);
                     if (distance < minDistance) {
                         minDistance = distance;
                         closestCentroidIndex = i;
@@ -38,34 +42,44 @@ public class KMeans {
                 }
                 clusters.get(closestCentroidIndex).add(customer);
             }
-
-            // Update centroids based on the mean of the assigned customers
+            
             for (int i = 0; i < k; i++) {
                 List<Customer> cluster = clusters.get(i);
                 if (!cluster.isEmpty()) {
-                    int sumAnnualIncome = 0;
-                    int sumSpendingScore = 0;
+                    double[] newCentroid = new double[4];
                     for (Customer customer : cluster) {
-                        sumAnnualIncome += customer.getAnnualIncome();
-                        sumSpendingScore += customer.getSpendingScore();
+                        newCentroid[0] += customer.getGender().equals("Male") ? 0 : 1;
+                        newCentroid[1] += customer.getAge();
+                        newCentroid[2] += customer.getAnnualIncome();
+                        newCentroid[3] += customer.getSpendingScore();
                     }
 
-                    Integer[] newCentroid = {sumAnnualIncome / cluster.size(), sumSpendingScore / cluster.size()};
-                    if (newCentroid[0] != centroids.get(i)[0] || newCentroid[1] != centroids.get(i)[1]) {
+                    for (int j = 0; j < 4; j++) {
+                        newCentroid[j] /= cluster.size();
+                    }
+
+                    boolean centroidChanged = false;
+                    for (int j = 0; j < 4; j++) {
+                        if (newCentroid[j] != centroids.get(i)[j]) {
+                            centroidChanged = true;
+                            break;
+                        }
+                    }
+
+                    if (centroidChanged) {
                         changed = true;
                         centroids.set(i, newCentroid);
                     }
                 }
             }
         }
-
-        // Print out the results
-        System.out.println("Clusters:");
+        
+        System.out.printf("%-12s %-6s %-4s %-13s %-14s %-8s%n", "CustomerID", "Gender", "Age", "Annual Income", "Spending Score", "Cluster");
         for (int i = 0; i < k; i++) {
-            System.out.println("Cluster " + (i + 1) + " centroid Annual Income = " + centroids.get(i)[0] + ", Spending Score = " + centroids.get(i)[1]);
             for (Customer customer : clusters.get(i)) {
-                System.out.println("CustomerID: " + customer.getCustomerID() + ", Annual Income = " + customer.getAnnualIncome() + ", Spending Score = " + customer.getSpendingScore());
+                System.out.printf("%-12d %-6s %-4d %-13d %-14d %-8d%n", customer.getCustomerID(), customer.getGender(), customer.getAge(), customer.getAnnualIncome(), customer.getSpendingScore(), i + 1);
             }
         }
     }
 }
+
