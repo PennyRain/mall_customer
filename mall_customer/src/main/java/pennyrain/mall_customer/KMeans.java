@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 public class KMeans {
+	// Test git
 	public static void classifyCustomers(List<Customer> customers, int k) {
         // Initialize random centroids
         List<Integer[]> centroids = new ArrayList<Integer[]>();
